@@ -16,47 +16,52 @@
 
 use crate::core::types::Algorithm;
 use hex;
+use tracing::{debug, warn};
 use uint::construct_uint;
-use tracing::{warn, debug};
 
 construct_uint! {
     pub struct U256(4);
 }
 
 const MAX_TARGET: [u8; 32] = [
-    0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ];
 
 pub fn parse_target_difficulty(target_hex: &str, algo: Algorithm) -> u64 {
     match algo {
-        Algorithm::Sha3x => {
-            match hex::decode(target_hex) {
-                Ok(target_bytes) => {
-                    if target_bytes.len() >= 8 {
-                        let target_u64 = u64::from_le_bytes([
-                            target_bytes[0], target_bytes[1], target_bytes[2], target_bytes[3],
-                            target_bytes[4], target_bytes[5], target_bytes[6], target_bytes[7],
-                        ]);
-                        if target_u64 > 0 {
-                            0xFFFFFFFFFFFFFFFFu64 / target_u64
-                        } else {
-                            warn!("Invalid SHA3x target: zero value");
-                            1
-                        }
+        Algorithm::Sha3x => match hex::decode(target_hex) {
+            Ok(target_bytes) => {
+                if target_bytes.len() >= 8 {
+                    let target_u64 = u64::from_le_bytes([
+                        target_bytes[0],
+                        target_bytes[1],
+                        target_bytes[2],
+                        target_bytes[3],
+                        target_bytes[4],
+                        target_bytes[5],
+                        target_bytes[6],
+                        target_bytes[7],
+                    ]);
+                    if target_u64 > 0 {
+                        0xFFFFFFFFFFFFFFFFu64 / target_u64
                     } else {
-                        warn!("Invalid SHA3x target: too short ({} bytes)", target_bytes.len());
+                        warn!("Invalid SHA3x target: zero value");
                         1
                     }
-                }
-                Err(e) => {
-                    warn!("Failed to decode SHA3x target hex: {}", e);
+                } else {
+                    warn!(
+                        "Invalid SHA3x target: too short ({} bytes)",
+                        target_bytes.len()
+                    );
                     1
                 }
             }
-        }
+            Err(e) => {
+                warn!("Failed to decode SHA3x target hex: {}", e);
+                1
+            }
+        },
         Algorithm::Sha256 => {
             if target_hex.is_empty() {
                 warn!("SHA-256 target hex is empty, using default difficulty");
@@ -65,7 +70,10 @@ pub fn parse_target_difficulty(target_hex: &str, algo: Algorithm) -> u64 {
             match hex::decode(target_hex) {
                 Ok(target_bytes) => {
                     if target_bytes.len() != 32 {
-                        warn!("Invalid SHA-256 target: wrong length ({} bytes)", target_bytes.len());
+                        warn!(
+                            "Invalid SHA-256 target: wrong length ({} bytes)",
+                            target_bytes.len()
+                        );
                         return 1;
                     }
                     let target = U256::from_big_endian(&target_bytes); // Stratum target is big-endian
@@ -75,7 +83,11 @@ pub fn parse_target_difficulty(target_hex: &str, algo: Algorithm) -> u64 {
                     }
                     let max_target = U256::from_big_endian(&MAX_TARGET);
                     let quotient = max_target / target;
-                    debug!("Parsed target: {:064x}, difficulty: {}", target, quotient.low_u64());
+                    debug!(
+                        "Parsed target: {:064x}, difficulty: {}",
+                        target,
+                        quotient.low_u64()
+                    );
                     if quotient > U256::from(u64::MAX) {
                         u64::MAX
                     } else {
@@ -99,8 +111,7 @@ pub fn calculate_difficulty(hash: &[u8], algo: Algorithm) -> u64 {
                 return 0;
             }
             let hash_u64 = u64::from_be_bytes([
-                hash[0], hash[1], hash[2], hash[3],
-                hash[4], hash[5], hash[6], hash[7],
+                hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7],
             ]);
             if hash_u64 == 0 {
                 warn!("Invalid SHA3x hash: zero value");
@@ -121,7 +132,11 @@ pub fn calculate_difficulty(hash: &[u8], algo: Algorithm) -> u64 {
             }
             let max_target = U256::from_big_endian(&MAX_TARGET);
             let quotient = max_target / hash_value;
-            debug!("Calculated difficulty: hash={:064x}, difficulty={}", hash_value, quotient.low_u64());
+            debug!(
+                "Calculated difficulty: hash={:064x}, difficulty={}",
+                hash_value,
+                quotient.low_u64()
+            );
             if quotient > U256::from(u64::MAX) {
                 u64::MAX
             } else {
@@ -149,11 +164,17 @@ pub fn difficulty_to_target(difficulty: f64) -> U256 {
 
 pub fn hash_meets_target(hash: &[u8], target: U256) -> bool {
     if hash.len() != 32 {
-        warn!("Invalid hash for SHA-256 target check: wrong length ({} bytes)", hash.len());
+        warn!(
+            "Invalid hash for SHA-256 target check: wrong length ({} bytes)",
+            hash.len()
+        );
         return false;
     }
     let hash_value = U256::from_big_endian(hash);
-    debug!("Hash check: hash={:064x}, target={:064x}", hash_value, target);
+    debug!(
+        "Hash check: hash={:064x}, target={:064x}",
+        hash_value, target
+    );
     hash_value <= target
 }
 

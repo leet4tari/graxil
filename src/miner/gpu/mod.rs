@@ -44,7 +44,7 @@ impl GpuManager {
     pub fn new() -> Self {
         Self
     }
-    
+
     pub fn is_available() -> bool {
         false
     }
@@ -57,7 +57,7 @@ impl GpuManager {
 //   - Supports both standalone GPU mode and hybrid CPU+GPU mode
 // - v1.1.0 (2025-06-24): Added GpuMiner support
 //   - Added gpu_miner module declaration for GPU-only mining
-//   - Added GpuMiner re-export for direct GPU mining capabilities  
+//   - Added GpuMiner re-export for direct GPU mining capabilities
 //   - Enables 363+ MH/s GPU-only mining mode
 // - v1.0.0 (2025-06-24): Initial GPU module structure
 //   - Added conditional compilation for GPU features

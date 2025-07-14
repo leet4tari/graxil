@@ -17,9 +17,9 @@
 // - src/pool/protocol.rs (Stratum protocol logic)
 // - Depends on: serde_json, crate::core::types
 
-use serde_json::{json, Value};
 use crate::core::types::Algorithm;
-use tracing::{error, debug};
+use serde_json::{Value, json};
+use tracing::{debug, error};
 
 /// Constructs messages for the Stratum protocol
 pub struct StratumProtocol;
@@ -76,8 +76,10 @@ impl StratumProtocol {
         ntime: Option<u32>,
     ) -> Value {
         if job_id.is_empty() || nonce.is_empty() || result.is_empty() {
-            error!("Invalid share submission: job_id={}, nonce={}, result={}", 
-                job_id, nonce, result);
+            error!(
+                "Invalid share submission: job_id={}, nonce={}, result={}",
+                job_id, nonce, result
+            );
             return json!({});
         }
         match algo {
@@ -96,8 +98,10 @@ impl StratumProtocol {
                 let extranonce2 = extranonce2.unwrap_or("");
                 let ntime_hex = ntime.map(|n| format!("{:08x}", n)).unwrap_or_default();
                 if extranonce2.is_empty() || ntime_hex.is_empty() {
-                    error!("Invalid SHA-256 share: extranonce2={}, ntime={}", 
-                        extranonce2, ntime_hex);
+                    error!(
+                        "Invalid SHA-256 share: extranonce2={}, ntime={}",
+                        extranonce2, ntime_hex
+                    );
                     return json!({});
                 }
                 json!({

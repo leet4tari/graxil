@@ -18,17 +18,17 @@
 // - Depends on: axum, tokio-tungstenite, serde, miner/stats
 
 use axum::{
+    Router,
     extract::ws::{WebSocket, WebSocketUpgrade},
     response::{Html, Response},
     routing::get,
-    Router,
 };
-use std::sync::Arc;
 use sha3x_miner::miner::stats::MinerStats;
-use tracing::{info, error, debug};
+use std::sync::Arc;
+use tracing::{debug, error, info};
 
 /// Start the web server for the mining dashboard
-/// 
+///
 /// Serves the dashboard at http://localhost:8080 and provides WebSocket
 /// endpoint at ws://localhost:8080/ws for real-time data streaming
 pub async fn start_web_server(stats: Arc<MinerStats>) {
@@ -56,7 +56,7 @@ pub async fn start_web_server(stats: Arc<MinerStats>) {
 }
 
 /// Handler for the main dashboard page
-/// 
+///
 /// Returns the HTML dashboard with embedded CSS and JavaScript
 async fn dashboard_handler() -> Html<&'static str> {
     debug!("📄 Serving dashboard HTML");
@@ -64,7 +64,7 @@ async fn dashboard_handler() -> Html<&'static str> {
 }
 
 /// WebSocket upgrade handler
-/// 
+///
 /// Upgrades HTTP connections to WebSocket for real-time data streaming
 async fn websocket_handler(
     ws: WebSocketUpgrade,
@@ -75,18 +75,18 @@ async fn websocket_handler(
 }
 
 /// Handle WebSocket connections and stream mining data
-/// 
+///
 /// Continuously sends mining statistics as JSON every 1 second
 /// until the client disconnects or an error occurs
 async fn handle_socket(mut socket: WebSocket, stats: Arc<MinerStats>) {
     use axum::extract::ws::Message;
-    
+
     info!("✅ WebSocket client connected");
-    
+
     loop {
         // Get current mining statistics
         let data = stats.to_websocket_data();
-        
+
         // Serialize to JSON
         let json = match serde_json::to_string(&data) {
             Ok(json) => json,
@@ -95,17 +95,17 @@ async fn handle_socket(mut socket: WebSocket, stats: Arc<MinerStats>) {
                 break;
             }
         };
-        
+
         // Send data to client
         if let Err(e) = socket.send(Message::Text(json)).await {
             debug!("🔌 WebSocket client disconnected: {}", e);
             break; // Client disconnected
         }
-        
+
         // Wait 1 second before next update (changed from 2 seconds)
         tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
     }
-    
+
     info!("🔌 WebSocket connection closed");
 }
 

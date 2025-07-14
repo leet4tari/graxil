@@ -19,8 +19,8 @@
 
 #[cfg(test)]
 mod tests {
-    use sha3x_miner::core::sha3x::sha3x_hash_with_nonce;
     use sha3::{Digest, Sha3_256};
+    use sha3x_miner::core::sha3x::sha3x_hash_with_nonce;
 
     #[test]
     fn test_sha3x_hash() {
