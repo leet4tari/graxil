@@ -96,11 +96,11 @@ jobs:
       matrix:
         include:
           - platform: 'ubuntu-22.04'
-            features: 'nvidia,opencl'
+            features: 'gpu,hybrid'
           - platform: 'macos-latest'
-            features: 'metal,opencl'
+            features: 'gpu,hybrid'
           - platform: 'windows-latest'
-            features: 'nvidia,opencl'
+            features: 'gpu,hybrid'
 
     runs-on: ${{ matrix.platform }}
 
